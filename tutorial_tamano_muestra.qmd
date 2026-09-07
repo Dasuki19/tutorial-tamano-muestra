@@ -1,0 +1,212 @@
+ ---
+title: "Cómo calcular el tamaño de muestra en R"
+subtitle: "Una guía práctica con el paquete pwr"
+author: "Daniel Sayari Cabrejos Bautista"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+  pdf:
+    toc: true
+---
+
+## ¿Por qué importa el tamaño de muestra?
+
+Un estudio con muy pocos participantes no puede detectar el efecto que busca, aunque el efecto exista. Uno con demasiados gasta recursos, alarga el trabajo de campo y expone innecesariamente a más personas.
+
+El cálculo del tamaño de muestra responde a una pregunta concreta: **¿a cuántos sujetos necesito estudiar para tener una probabilidad razonable de encontrar el efecto que espero, si es que existe?**
+
+Este tutorial muestra cómo responderla en R con el paquete `pwr`.
+
+## Instalación
+
+```{r}
+#| eval: false
+install.packages("pwr")
+```
+
+```{r}
+library(pwr)
+```
+
+## Las cuatro piezas del cálculo
+
+Todo cálculo de tamaño de muestra involucra cuatro cantidades:
+
+| Pieza | Qué es | Valor habitual |
+|------------------|-----------------------------------|------------------|
+| **Alfa** (`sig.level`) | Probabilidad de detectar un efecto que no existe (error tipo I) | 0.05 |
+| **Poder** (`power`) | Probabilidad de detectar un efecto que sí existe | 0.80 |
+| **Tamaño del efecto** | Qué tan grande es la diferencia que se busca | depende del estudio |
+| **n** | Número de sujetos | lo que queremos hallar |
+
+La idea central es que **las cuatro están conectadas**: si se fijan tres, la cuarta queda determinada. Por eso todas las funciones de `pwr` siguen la misma lógica: se dejan tres argumentos con valor y el cuarto sin especificar, y R calcula ese.
+
+```{r}
+# Dejando n sin especificar, R calcula n
+pwr.t.test(d = 0.5, sig.level = 0.05, power = 0.80, type = "one.sample")
+```
+
+```{r}
+# Dejando power sin especificar, R calcula el poder
+pwr.t.test(d = 0.5, sig.level = 0.05, n = 30, type = "one.sample")
+```
+
+Esa simetría es útil en la práctica. Si el presupuesto ya fija el número de participantes, la pregunta deja de ser "cuántos necesito" y pasa a ser "con los que tengo, qué puedo detectar".
+
+## El tamaño del efecto
+
+Es la pieza que más confunde y la que más pesa en el resultado.
+
+El tamaño del efecto expresa la magnitud de la diferencia **en unidades de desviación estándar**, para que sea comparable entre estudios. Cambia de nombre según el tipo de variable:
+
+| Símbolo | Se usa para | Función en R |
+|-------------------|--------------------------|---------------------------|
+| **d** | Diferencia de medias | se calcula a mano: `(m1 - m2)/sd` |
+| **h** | Diferencia de proporciones | `ES.h(p1, p2)` |
+| **f** | Comparación de 3 o más medias | `cohen.ES(test = "anov", ...)` |
+
+Los valores de referencia de Cohen:
+
+| | Pequeño | Mediano | Grande |
+|------------------|------------------|------------------|------------------|
+| d | 0.20 | 0.50 | 0.80 |
+| h | 0.20 | 0.50 | 0.80 |
+| f | 0.10 | 0.25 | 0.40 |
+
+**Un aviso importante:** estas referencias son un recurso de último recurso, para cuando no hay ningún dato previo. Si usted conoce las medias esperadas y la variabilidad, calcule el efecto real en lugar de usar el valor convencional. Los valores de Cohen no son una regla, son una muleta.
+
+### Por qué el efecto domina el cálculo
+
+El tamaño de muestra crece de forma inversa al **cuadrado** del efecto. Reducir a la mitad el efecto que se quiere detectar multiplica por cuatro la muestra necesaria. Veámoslo:
+
+```{r}
+efectos <- c(0.2, 0.3, 0.4, 0.5, 0.6, 0.8)
+
+n <- sapply(efectos, function(d) {
+  pwr.t.test(d = d, sig.level = 0.05, power = 0.80,
+             type = "two.sample")$n
+})
+
+data.frame(efecto = efectos, n_por_grupo = ceiling(n))
+```
+
+```{r}
+plot(efectos, n, type = "b", lwd = 2,
+     xlab = "Tamaño del efecto (d)",
+     ylab = "n por grupo",
+     main = "Tamaño de muestra según el efecto buscado")
+```
+
+Detectar un efecto pequeño (d = 0.2) exige casi 400 sujetos por grupo; uno grande (d = 0.8) apenas 26. Por eso definir bien el efecto esperado es la decisión más importante de todo el proceso, y la que más discusión debería tener con el equipo clínico.
+
+## Qué función usar
+
+La elección depende de tres preguntas: qué tipo de variable, cuántos grupos, y si los grupos son independientes o no.
+
+| Situación | Función |
+|-------------------------------|-----------------------------------------|
+| Una media vs. un valor de referencia | `pwr.t.test(type = "one.sample")` |
+| Una proporción vs. un valor de referencia | `pwr.p.test()` |
+| Dos medias, grupos independientes | `pwr.t.test(type = "two.sample")` |
+| Dos medias, mismas personas medidas dos veces | `pwr.t.test(type = "paired")` |
+| Dos proporciones, grupos independientes | `pwr.2p.test()` |
+| Tres o más medias | `pwr.anova.test()` |
+| Correlación | `pwr.r.test()` |
+| Chi cuadrado | `pwr.chisq.test()` |
+
+## Ejemplo 1: comparar una media contra un valor conocido
+
+**Situación.** El puntaje promedio nacional en una escala de conocimientos es de 20 puntos, con desviación estándar de 10. Un programa educativo espera elevarlo a 30. ¿A cuántas personas hay que evaluar?
+
+**Paso 1: calcular el efecto.**
+
+```{r}
+d <- (30 - 20)/10
+d
+```
+
+**Paso 2: calcular n.**
+
+```{r}
+pwr.t.test(d = d, sig.level = 0.05, power = 0.80, type = "one.sample")
+```
+
+**Interpretación.** Bastan 10 personas. El número es tan bajo porque el efecto esperado es enorme: se espera que el puntaje suba una desviación estándar completa. Cuando un cálculo arroja un n sospechosamente pequeño, casi siempre significa que el efecto asumido es demasiado optimista.
+
+## Ejemplo 2: comparar dos proporciones
+
+**Situación.** La adherencia al tratamiento con la atención habitual es de 60%. Se quiere probar una intervención que la elevaría a 75%. ¿Cuántos pacientes por grupo?
+
+**Paso 1: calcular el efecto con `ES.h()`.**
+
+```{r}
+h <- ES.h(0.75, 0.60)
+h
+```
+
+Con proporciones no se usa la resta directa. La razón es que la misma diferencia de 15 puntos no significa lo mismo en todo el rango: pasar de 5% a 20% es un cambio mucho mayor que pasar de 50% a 65%. `ES.h()` aplica una transformación (arcoseno) que corrige eso.
+
+**Paso 2: calcular n.**
+
+```{r}
+pwr.2p.test(h = h, sig.level = 0.05, power = 0.80,
+            alternative = "two.sided")
+```
+
+**Interpretación.** Se necesitan 165 pacientes **por grupo**, es decir 330 en total. Este es el punto donde más gente se equivoca al reportar: la función devuelve el n de cada grupo, no el del estudio completo.
+
+## Ejemplo 3: comparar tres o más grupos
+
+**Situación.** Se comparan tres modalidades de seguimiento y se espera un efecto mediano.
+
+```{r}
+pwr.anova.test(k = 3, f = 0.25, sig.level = 0.05, power = 0.80)
+```
+
+Se requieren 53 sujetos por grupo, 159 en total.
+
+Si en cambio se conocen las medias esperadas de cada grupo y la varianza dentro de ellos, conviene usar `power.anova.test()` del R base, que trabaja con esos valores directamente:
+
+```{r}
+medias <- c(50, 60, 70)
+
+power.anova.test(groups = 3,
+                 between.var = var(medias),
+                 within.var = 900,
+                 sig.level = 0.05,
+                 power = 0.80)
+```
+
+## Errores frecuentes
+
+**Reportar el n por grupo como si fuera el total.** `pwr.t.test`, `pwr.2p.test` y `pwr.anova.test` devuelven el número por grupo. Multiplique por el número de grupos.
+
+**Olvidar las pérdidas.** Todos estos cálculos dan el número de sujetos **analizables**. Si espera 20% de pérdida de seguimiento:
+
+```{r}
+n_calculado <- 165
+n_reclutar <- ceiling(n_calculado/(1 - 0.20))
+n_reclutar
+```
+
+**Escribir mal un argumento.** R no siempre avisa. Si escribe `sig.leve` en lugar de `sig.level`, la función acepta ese texto, usa el valor por defecto para el argumento real y devuelve un resultado incorrecto sin ningún mensaje de error. Revise la ortografía de los argumentos.
+
+**Usar un efecto negativo.** Si calcula el efecto como `(0 - 5)/5` obtiene -1. Use el valor absoluto: el signo indica dirección, no magnitud.
+
+**Elegir el efecto para que salga el n que se quiere.** Es la tentación más común y la más dañina: inflar el efecto esperado hasta que el tamaño de muestra quepa en el presupuesto. El estudio queda formalmente correcto y prácticamente inútil.
+
+## Resumen
+
+1. Defina primero el efecto que quiere detectar, y hágalo pensando en qué diferencia sería clínicamente relevante, no en qué número le conviene.
+2. Fije alfa (0.05) y poder (0.80) salvo que tenga razones para otra cosa.
+3. Elija la función según tipo de variable, número de grupos e independencia.
+4. Traduzca el efecto a las unidades originales para verificar que tiene sentido.
+5. Ajuste por pérdidas antes de reportar el número de reclutamiento.
+
+## Para seguir
+
+-   Documentación del paquete: `help(package = "pwr")`
+-   Cohen J. *Statistical Power Analysis for the Behavioral Sciences*. 2a ed. Lawrence Erlbaum, 1988.
