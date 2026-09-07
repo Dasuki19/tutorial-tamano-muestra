@@ -1,0 +1,521 @@
+---
+title: "Capítulo 2: Cálculo de tamaño de muestra"
+author: "Antonio M. Quispe, MD, PhD"
+format: html
+---
+
+# Cálculo de tamaño de muestra
+
+## Objetivos de aprendizaje
+
+Después de finalizar esta práctica debería ser capaz de:
+
+-   Calcular de forma adecuada el tamaño de muestra
+-   Comprender los escenarios más comunes de cálculo de tamaño de muestra
+
+## Indicaciones
+
+Cada ejercicio presenta un contexto, los datos disponibles y una consigna. Resuelva en el bloque de código correspondiente antes de abrir la solución.
+
+## Instalar paquetes
+
+Ejecute esto una sola vez en la consola.
+
+```{r}
+#| eval: false
+install.packages("pwr")
+install.packages("pwr2")
+```
+
+## Cargar paquetes
+
+```{r}
+library(pwr)
+library(pwr2)
+```
+
+------------------------------------------------------------------------
+
+## Ejercicio 1: Incrementos de una media en una misma población
+
+El puntaje promedio de conocimientos sobre signos de alarma en gestantes de una región es de 20 puntos (sd = 10). Se espera que un programa de consejería lo eleve a 30 puntos.
+
+Datos:
+
+-   2 colas
+-   Ho: m = m0; Ha: m != m0, m0 = 20, ma = 30
+-   diff = 10
+-   sd = 10
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Calcule el tamaño del efecto (d).
+b)  Calcule el tamaño de muestra.
+c)  Calcule el poder si solo evalúa a 20 gestantes.
+d)  Calcule el efecto mínimo detectable con n = 20 y poder de 0.80.
+
+```{r}
+#| eval: false
+# a)
+d <- 
+
+# b)
+pwr.t.test()
+
+# c)
+pwr.t.test()
+
+# d)
+pwr.t.test()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+$$
+d = |u1 - u2|/sd
+$$
+
+```{r}
+d <- (30 - 20)/10
+d
+```
+
+```{r}
+pwr.t.test(d = d, sig.level = 0.05, power = 0.80, type = "one.sample")
+```
+
+```{r}
+pwr.t.test(n = 20, d = d, sig.level = 0.05, type = "one.sample")
+```
+
+```{r}
+pwr.t.test(n = 20, sig.level = 0.05, power = 0.80, type = "one.sample")
+```
+
+Se requieren 10 gestantes. Con 20 el poder supera 0.99 y el efecto mínimo detectable baja a d = 0.66, equivalente a 6.6 puntos.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 2: Incrementos de una proporción en una misma población
+
+La prevalencia de anemia en menores de 3 años de un distrito es de 10%. Se sospecha que actualmente sería de 15%.
+
+Datos:
+
+-   2 colas
+-   Ho: p = p0; Ha: p != p0, p0 = 10%
+-   diff = 5% (o pa = 15%)
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Calcule el tamaño del efecto (h) con `ES.h()`.
+b)  Calcule el tamaño de muestra.
+c)  Calcule el poder con n = 400.
+d)  Calcule el efecto mínimo detectable con n = 400.
+
+```{r}
+#| eval: false
+# a)
+h <- 
+
+# b)
+pwr.p.test()
+
+# c)
+pwr.p.test()
+
+# d)
+pwr.p.test()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+$$
+h = 2 \cdot arcsin(\sqrt{p1}) - 2 \cdot arcsin(\sqrt{p2})
+$$
+
+Referencia: 0.2 pequeño, 0.5 medio, 0.8 grande.
+
+```{r}
+h <- ES.h(0.15, 0.10)
+h
+```
+
+```{r}
+pwr.p.test(h = h, power = 0.80, sig.level = 0.05)
+```
+
+```{r}
+pwr.p.test(h = h, n = 400, sig.level = 0.05)
+```
+
+```{r}
+pwr.p.test(n = 400, sig.level = 0.05, power = 0.80)
+```
+
+El efecto es pequeño (h = 0.15), por eso se necesitan 376 niños. Con 400 el poder llega a 0.82.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 3: Diferencia de medias de dos poblaciones independientes
+
+Se comparan los días de hospitalización entre pacientes con dos esquemas terapéuticos distintos. No hay información previa sobre la diferencia esperada, por lo que se planifica para un efecto mediano.
+
+Datos:
+
+-   2 colas
+-   Ho: m2 = m1; Ha: m2 != m1
+-   sd1 = 5.5, sd2 = 5
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Obtenga el efecto mediano de referencia con `cohen.ES()`.
+b)  Calcule el tamaño de muestra por grupo y el total.
+c)  Calcule el poder con 70 pacientes por grupo.
+d)  Calcule el efecto mínimo detectable con n = 70.
+
+```{r}
+#| eval: false
+# a)
+efecto_u2_u1 <- 
+
+# b)
+pwr.t.test()
+
+# c)
+pwr.t.test()
+
+# d)
+pwr.t.test()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+```{r}
+efecto_u2_u1 <- cohen.ES(test = "t", size = "medium")
+efecto_u2_u1
+```
+
+```{r}
+pwr.t.test(d = 0.5, sig.level = 0.05, power = 0.80,
+           type = "two.sample", alternative = "two.sided")
+```
+
+```{r}
+pwr.t.test(d = 0.5, n = 70, sig.level = 0.05,
+           type = "two.sample", alternative = "two.sided")
+```
+
+```{r}
+pwr.t.test(n = 70, sig.level = 0.05, power = 0.80,
+           type = "two.sample", alternative = "two.sided")
+```
+
+Se requieren 64 pacientes por grupo, es decir 128 en total. `pwr.t.test` siempre devuelve el n por grupo.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 4: Diferencia de proporciones en dos poblaciones independientes
+
+Se evalúa si un acompañamiento telefónico mejora la adherencia al tratamiento antituberculoso. La adherencia con atención estándar es de 10% y se espera que suba a 50%.
+
+Datos:
+
+-   2 colas
+-   Ho: p2 = p1; Ha: p2 != p1
+-   p1 = 10%
+-   diff = 40% (o p2 = 50%)
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Calcule el tamaño del efecto (h).
+b)  Calcule el tamaño de muestra por grupo.
+c)  Calcule el poder con 20 pacientes por grupo.
+d)  Calcule el efecto mínimo detectable con n = 20.
+
+```{r}
+#| eval: false
+# a)
+efecto_p2_p1 <- 
+
+# b)
+pwr.2p.test()
+
+# c)
+pwr.2p.test()
+
+# d)
+pwr.2p.test()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+```{r}
+efecto_p2_p1 <- ES.h(0.5, 0.1)
+efecto_p2_p1
+```
+
+```{r}
+pwr.2p.test(h = efecto_p2_p1, sig.level = 0.05, power = 0.80,
+            alternative = "two.sided")
+```
+
+```{r}
+pwr.2p.test(h = efecto_p2_p1, n = 20, sig.level = 0.05,
+            alternative = "two.sided")
+```
+
+```{r}
+pwr.2p.test(n = 20, sig.level = 0.05, power = 0.80,
+            alternative = "two.sided")
+```
+
+Bastan 19 pacientes por grupo porque el efecto es grande (h = 0.93). Compare con el ejercicio 2: la misma proporción de partida exige 376 sujetos cuando la diferencia buscada es pequeña.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 5: Diferencia de medias de dos muestras dependientes
+
+Se mide la presión arterial sistólica antes y después de un taller de automanejo, en los mismos pacientes. Se espera una reducción de 5 mmHg.
+
+Datos:
+
+-   2 colas
+-   Ho: d = d0; Ha: d != d0
+-   d0 = 5
+-   sd1 = sd2 = sd, sd = 5
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Calcule el tamaño del efecto (use el valor absoluto).
+b)  Calcule el número de pacientes.
+c)  Calcule el poder con n = 40.
+d)  Calcule el efecto mínimo detectable con n = 40.
+
+```{r}
+#| eval: false
+# a)
+efecto_pareado <- 
+
+# b)
+pwr.t.test()
+
+# c)
+pwr.t.test()
+
+# d)
+pwr.t.test()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+```{r}
+efecto_pareado <- abs(0 - 5)/5
+efecto_pareado
+```
+
+```{r}
+pwr.t.test(d = efecto_pareado, power = 0.80, sig.level = 0.05,
+           type = "paired", alternative = "two.sided")
+```
+
+```{r}
+pwr.t.test(d = efecto_pareado, n = 40, sig.level = 0.05,
+           type = "paired", alternative = "two.sided")
+```
+
+```{r}
+pwr.t.test(n = 40, power = 0.80, sig.level = 0.05,
+           type = "paired", alternative = "two.sided")
+```
+
+Se requieren 10 pacientes, cada uno con dos mediciones. El diseño pareado necesita menos sujetos porque cada paciente es su propio control.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 6: ANOVA de una vía (comparación de más de dos medias)
+
+Se compara el puntaje de calidad de vida entre pacientes con tres modalidades de seguimiento: presencial, telefónico y mixto.
+
+Datos:
+
+-   Ho: delta = 0; Ha: delta != 0
+-   m1 = 50, m2 = 60, m3 = 70
+-   var error = 900
+-   k = 3
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Obtenga el efecto mediano de referencia para ANOVA con `cohen.ES()`.
+b)  Calcule el tamaño de muestra por grupo.
+c)  Calcule el poder con 60 sujetos por grupo.
+d)  Calcule el efecto mínimo detectable con n = 60.
+
+```{r}
+#| eval: false
+# a)
+efecto_anova <- 
+
+# b)
+pwr.anova.test()
+
+# c)
+pwr.anova.test()
+
+# d)
+pwr.anova.test()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+```{r}
+efecto_anova <- cohen.ES(test = "anov", size = "medium")
+efecto_anova
+```
+
+```{r}
+pwr.anova.test(f = 0.25, k = 3, sig.level = 0.05, power = 0.80)
+```
+
+```{r}
+pwr.anova.test(f = 0.25, k = 3, n = 60, sig.level = 0.05)
+```
+
+```{r}
+pwr.anova.test(k = 3, n = 60, sig.level = 0.05, power = 0.80)
+```
+
+Se necesitan 53 sujetos por grupo, 159 en total. Para ANOVA las referencias de f son 0.10 pequeño, 0.25 mediano y 0.40 grande.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 7: Media entre dos o más poblaciones independientes
+
+Se compara el costo promedio por atención en tres hospitales de una red. Los costos esperados son 550, 598 y 610 soles, con una varianza dentro de los hospitales de 6400.
+
+Datos:
+
+-   3 grupos
+-   medias = 550, 598, 610
+-   within.var = 6400
+-   p = 0.05
+-   power = 0.80
+
+**Consigna**
+
+a)  Calcule el tamaño de muestra con `power.anova.test()`, usando `between.var = var(grupos)`.
+b)  Calcule el poder con 40 atenciones por hospital.
+c)  Calcule el tamaño del efecto como la diferencia entre la media mayor y la menor sobre la desviación estándar común.
+
+```{r}
+#| eval: false
+grupos <- c(550, 598, 610)
+
+# a)
+power.anova.test()
+
+# b)
+power.anova.test()
+
+# c)
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+```{r}
+grupos <- c(550, 598, 610)
+
+power.anova.test(groups = length(grupos),
+                 between.var = var(grupos),
+                 within.var = 6400,
+                 power = 0.8,
+                 sig.level = 0.05,
+                 n = NULL)
+```
+
+```{r}
+power.anova.test(groups = 3,
+                 between.var = var(grupos),
+                 within.var = 6400,
+                 power = NULL,
+                 sig.level = 0.05,
+                 n = 40)
+```
+
+```{r}
+(610 - 550)/80
+```
+
+Se requieren 32 atenciones por hospital, es decir 96 en total. Con 40 por hospital el poder sube a 0.89.
+:::
+
+------------------------------------------------------------------------
+
+## Ejercicio 8: ANOVA de dos vías
+
+Se evalúa el efecto de un programa educativo sobre la adherencia terapéutica considerando dos factores: modalidad (presencial o virtual) y grupo etario (adultos o adultos mayores), con 40 participantes por nivel.
+
+Datos:
+
+-   a = 2, b = 2
+-   size.A = 40, size.B = 40
+-   f.A = 0.25 (mediano), f.B = 0.55 (grande)
+-   alpha = 0.05, beta = 0.20
+
+**Consigna**
+
+a)  Calcule el poder de cada efecto principal con `pwr.2way()`.
+b)  Calcule el tamaño de muestra con `ss.2way()`.
+
+```{r}
+#| eval: false
+# a)
+pwr.2way()
+
+# b)
+ss.2way()
+```
+
+::: {.callout-tip collapse="true"}
+## Solución
+
+```{r}
+pwr.2way(a = 2, b = 2, alpha = 0.05,
+         size.A = 40, size.B = 40,
+         f.A = 0.25, f.B = 0.55)
+```
+
+```{r}
+ss.2way(a = 2, b = 2, alpha = 0.05, beta = 0.20,
+        f.A = 0.25, f.B = 0.55,
+        delta.A = NULL, delta.B = NULL,
+        sigma.A = NULL, sigma.B = NULL, B = 40)
+```
+
+El poder es de 88% para el factor A y de 100% para el factor B. El tamaño de muestra queda determinado por el factor con el efecto más pequeño.
+:::
